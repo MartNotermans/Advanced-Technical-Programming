@@ -1,29 +1,71 @@
 <html>
-    <Body>
-
-        <section>
-            <h2>Add</h2>
-            <h3>int Number1 223</h3>
-            <h3>int Number2</h3>
-
-            <article>
-                <input type="number" id="input" name="int"><br><br>
-                <figure>
-                    <h4>if input > Number2</h4>
-                    <!--if code goes here-->
-                    <figure>
-                        <!--else code goes here-->
+    <body>
+        <!--
+            bool even(unsigned int n) {
+                if(n==0){return true;}
+                return odd(n-1);
+            }
+        -->
+        <section> <!--function declaration-->
+            <h2>even</h2> <!--functie name-->
+            <h3>bool</h3> <!--return type-->
+            <mark> <!--functie parameter-->
+                <h2>n</h2>
+                <h3>unsigned int</h3>
+            </mark>
+            <figure>   <!--functie body-->
+                <article> <!-- if statement-->
+                    <i>n == 0</i> <!--if statement condition-->
+                    <figure> <!--if statement body-->
+                        <nav> <!--return-->
+                            <h4>true</h4>
+                        </nav>
                     </figure>
-                </figure>
-            </article>
+                    <figure> <!--2e figure is else statement body-->
+                        <nav> <!--return-->
+                            <summary> <!--functie aanroepen-->
+                                <h2>odd</h2> <!--functie name-->
+                                <h3>var</h3> <!--place to return to-->
+                                <h4>n - 1</h4> <!--functie parameter-->
+                            </summary>
+                        </nav>
+                    </figure>
+                </article>
+            </figure>
         </section>
 
-        <section>
-            <h2>check</h2>
-            <h3>bool value False</h3>
-            <article>
-
-            </article>
-
+        <!-- 
+            bool odd(unsigned int n){
+                if(n==0){return false;}
+                return even(n-1);
+            }
+         -->
+         <section> <!--function declaration-->
+            <h2>odd</h2> <!--functie name-->
+            <h3>bool</h3> <!--return type-->
+            <mark> <!--functie parameter-->
+                <h2>n</h2>
+                <h3>unsigned int</h3>
+            </mark>
+            <figure>   <!--functie body-->
+                <article> <!-- if statement-->
+                    <i>n == 0</i> <!--if statement condition-->
+                    <figure> <!--if statement body-->
+                        <nav> <!--return-->
+                            <h4>false</h4>
+                        </nav>
+                    </figure>
+                    <figure> <!--2e figure is else statement body-->
+                        <nav> <!--return-->
+                            <summary> <!--functie aanroepen-->
+                                <h2>even</h2> <!--functie name-->
+                                <h3>var</h3> <!--place to return to-->
+                                <h4>n - 1</h4> <!--functie parameter-->
+                            </summary>
+                        </nav>
+                    </figure>
+                </article>
+            </figure>
+        </section>
     </body>
 </html>
