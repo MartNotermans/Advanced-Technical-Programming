@@ -1,7 +1,7 @@
 from typing import Tuple
 import sys
 sys.setrecursionlimit(200000)
-import string
+import functools
 
 whiteSpace = ' \n\r\t'
 validTagChars = 'abcdefghijklmnopqrstuvwxyz0123456789'
@@ -14,7 +14,15 @@ class tag:
         self.children = [] #all other tags containd in this tag
         self.code = "" #code contained in this tag
         self.closingTagIndex = 0
-        print(self.name, "found!")
+        #print(self.name, "found!")
+
+#<section>
+class function(tag):
+    def __init__(self):
+        self.functionName = tag
+        self.returnType = tag
+        self.parameter = tag
+        self.body = tag
 
 
 #Tuple[is het een tag, "naam van de tag", open of closing tag, first char after tag]
@@ -33,17 +41,21 @@ def checkIfTag(file : str, index) -> Tuple[bool, str, bool, int]:
         isOpenTag = False
         index+=1
 
-    if not file[index] in validTagChars:
-        #geen tag, check if <>
-        return(False, "", isOpenTag, 0)
 
-    #index+1 opdat eerste char al gecheckt is
-    for i in range (index+1, len(file) ):
-        if file[i] == '>':
-            #i+1 omdat je het eerste char na de tag returnt
-            return (True, file[index: i], isOpenTag, i+1)
-        elif not file[i] in validTagChars:
-            return(False, "", isOpenTag, 0)
+    #als er een > op index zit vinden we die later en geven we dan alsnog een error
+    endOfTag = file.find('>', index+1)
+    if endOfTag == -1:
+        #syntax error
+        return (False, "", isOpenTag, 0)
+
+
+    tagName = file[index: endOfTag]
+    #lambda om te checken of alle characters in tagName in validTagChars zitten
+    #b is een bool of alle vorige chars valid zijn
+    #c is de huidige char
+    if functools.reduce(lambda b, c: b and c in validTagChars, tagName, True):
+        #valid tag
+        return (True, tagName, isOpenTag, endOfTag+1)
 
     #syntax error
     return (False, "", isOpenTag, 0)
@@ -53,16 +65,16 @@ def checkIfComment(file, index) -> Tuple[bool, int]:
     if file[index: index+4] != "<!--":
         return (False, 0)
 
-    for i in range(index+4, len(file)):
-        #i+3 is het eerste char na de closing tag
-        if file[i: i+3] == "-->":
-            return (True, i+3)
-    
-    #syntax error
-    return (False, 0)
+    #index+4 omdat <!-- 4 chars is, en ja daarna begind met zoeken
+    endOfComment = file.find("-->", index+4)
+    if endOfComment == -1:
+        #syntax error
+        return (False, 0)
+    #endOfComment+3 omdat je de eerste char na de comment returnt
+    return (True, endOfComment+3)
 
-
-def parser(file, currentTag : tag, index):
+#alle html tags in volgorde nestelen
+def findTags(file, currentTag : tag, index):
     #bool om bij te houden of er text in de huidige tag zit
     #als er text en childern in de huidige tag zitten heb je een syntax error
     foundTxt = False
@@ -77,7 +89,7 @@ def parser(file, currentTag : tag, index):
                 newTag = tag(isTag[1])
                 currentTag.children.append(newTag)
                 #isTag[3] is de eerste char na de huidige tag
-                parser(file, newTag, isTag[3])
+                findTags(file, newTag, isTag[3])
                 i = newTag.closingTagIndex
             #is this a maching closing tag?
             elif isTag[1] == currentTag.name:
@@ -107,8 +119,7 @@ def parser(file, currentTag : tag, index):
 
         
 
-#infinite loop!!!
-def startParser():
+def findFirstTag():
     i = 0
     with open("test.html", "r") as f:
         file = f.read()
@@ -126,27 +137,34 @@ def startParser():
                     i+=1
             else:
                 i+=1
-    parser(file, root, i+6)
+    findTags(file, root, i+6)
     return root
 
+#welke functie is dit, lexer of parser
+def lexerAndParser(currentTag : tag):
+    if currentTag.name in tagdict:
+        tagdict[currentTag.name][1]()
 
+
+taglist = ["<html>", "<Body>", "<section>", "<h2>", "<h3>"]
 
 #dict met tags
 tagdict = dict()
-tagdict["<html>"] = ("fileStart", lambda: print("file Start"))
-tagdict["</html>"] = ("fileEnd", lambda: print("file End"))
-tagdict["<Body>"] = ("bodyStart", lambda: print("body Start"))
-tagdict["</Body>"] = ("bodyEnd", lambda: print("body End"))
-tagdict["<section>"] = ("functionStart", lambda: print("function Start"))
-tagdict["</section>"] = ("functionEnd", lambda: print("function End"))
-tagdict["<h2>"] = ("functionNameStart", lambda: print("function Name Start"))
-tagdict["</h2>"] = ("functionNameEnd", lambda: print("function Name End"))
-tagdict["<h3>"] = ("functionParameterStart", lambda: print("function parameter Start"))
-tagdict["</h3>"] = ("functionParameterEnd", lambda: print("function parameter End"))
-tagdict["<article>"] = ("functionBodyStart", lambda: print("function Body Start"))
-tagdict["</article>"] = ("functionBodyEnd", lambda: print("function Body End"))
-tagdict["<h4>"] = ("ifStatementStart", lambda: print("if Statement Start"))
-tagdict["</h4>"] = ("ifStatementEnd", lambda: print("if Statement  End"))
+tagdict["html"] = ("file start", lambda: print("file start found"))
+tagdict["Body"] = ("body start", lambda: print("body Found"))
+tagdict["section"] = ("function declaration", lambda: print("function"))
+tagdict["h2"] = ("name", lambda: print("name found"))
+tagdict["h3"] = ("variable type", lambda: print(""))
+tagdict["mark"] = ("variable", lambda: print(""))
+tagdict["h4"] = ("value or calculation", lambda: print(""))
+tagdict["figure"] = ("code block", lambda: print(""))
+tagdict["summary"] = ("function calling", lambda: print(""))
+tagdict["article"] = ("if statement", lambda: print(""))
+tagdict["i"] = ("condition", lambda: print(""))
+tagdict["footer"] = ("while loop", lambda: print(""))
+tagdict["nav"] = ("return statement", lambda: print(""))
 
 
-startParser()
+print("start program")
+root = findFirstTag()
+lexerAndParser(root)
