@@ -74,7 +74,7 @@ def checkIfComment(file, index) -> Tuple[bool, int]:
     return (True, endOfComment+3)
 
 #alle html tags in volgorde nestelen
-def findTags(file, currentTag : tag, index):
+def findTags(file, currentTag : tag, index): #met loopjes
     #bool om bij te houden of er text in de huidige tag zit
     #als er text en childern in de huidige tag zitten heb je een syntax error
     foundTxt = False
