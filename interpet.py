@@ -4,7 +4,7 @@ sys.setrecursionlimit(200000)
 import functools
 
 whiteSpace = ' \n\r\t'
-validTagChars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+validTagChars = 'abcdefghijklmnopqrstuvwxyz0123456789/'
 
 #class body(tag)
 
@@ -25,7 +25,7 @@ class function(tag):
         self.body = tag
 
 
-#Tuple[is het een tag, "naam van de tag", open of closing tag, first char after tag]
+#Tuple[is het een tag, "naam van de tag", open of closing tag - open=true, lengte tag]
 def checkIfTag(file : str, index) -> Tuple[bool, str, bool, int]:
     isOpenTag = True
     #check if first char is opening bracket
@@ -39,10 +39,11 @@ def checkIfTag(file : str, index) -> Tuple[bool, str, bool, int]:
     #om de closing tag te vinden
     if file[index] == '/':
         isOpenTag = False
-        index+=1
+        #index+=1
 
 
     #als er een > op index zit vinden we die later en geven we dan alsnog een error
+    #!!!!!!!!!!!!!!! wat is .find, hogere orde functie? telt als loop?
     endOfTag = file.find('>', index+1)
     if endOfTag == -1:
         #syntax error
@@ -60,7 +61,7 @@ def checkIfTag(file : str, index) -> Tuple[bool, str, bool, int]:
     #syntax error
     return (False, "", isOpenTag, 0)
 
-#Tuple[is a comment, index of char na comment]
+#Tuple[is a comment, lengte comment]
 def checkIfComment(file, index) -> Tuple[bool, int]:
     if file[index: index+4] != "<!--":
         return (False, 0)
@@ -80,6 +81,7 @@ def findTags(file, currentTag : tag, index): #met loopjes
     foundTxt = False
 
     i = index
+    #MAG NIET!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     while i < len(file):
         isTag = checkIfTag(file, i)
         #[0] is a valid tag?
@@ -116,34 +118,57 @@ def findTags(file, currentTag : tag, index): #met loopjes
                     foundTxt = True
                 i+=1
 
+def FindOtherTags(currentTag, file, i):
+    if i >= len(file):
+        return currentTag        
 
-        
+def recursiveFindFirstTag(file, i): 
+    if i >= len(file):
+        return tag("error")
+    chr = file[i]
+    if chr in whiteSpace:
+        i+=1
+    elif chr == '<':
+        #+6 is de lengte van <html>
+        if file[i:i+6] == "<html>":
+            #i+6 is het eerste char na <html>
+            root = tag("html")
+            FindOtherTags(root, file, i)
+            return root
+        else:
+            i+=1
+    else:
+        i+=1
+    recursiveFindFirstTag(file, i)
 
-def findFirstTag():
-    i = 0
-    with open("test.html", "r") as f:
-        file = f.read()
-        while i < len(file):
-            chr = file[i]
-            if chr in whiteSpace:
-                i+=1
-            elif chr == '<':
-                #+6 is de lengte van <html>
-                if file[i:i+6] == "<html>":
-                    #i+6 is het eerste char na <html>
-                    root = tag("html")
-                    break
-                else:
-                    i+=1
-            else:
-                i+=1
-    findTags(file, root, i+6)
-    return root
+def lexer(file, i=0, tokens=[]):
+    if i >= len(file):
+        return tokens
+    
+    chr = file[i]
+    if chr in whiteSpace:
+        i+=1
+    elif chr == '<':
+        isTag = checkIfTag(file, i)
+        #[0] is isTag a valid tag?
+        if isTag[0]:
+            tokens.append(isTag[1])
+            i += isTag[3]
 
-#welke functie is dit, lexer of parser
-def lexerAndParser(currentTag : tag):
-    if currentTag.name in tagdict:
-        tagdict[currentTag.name][1]()
+
+        isComment = checkIfComment(file, i)
+        #[0] is isComment a valid comment?
+        if isComment[0]:
+            #ignore comment
+            i += isComment[1]
+
+    elif chr in validTagChars:
+        i+=1
+
+    else:
+        i+=1
+        return lexer(file, i, tokens)
+    return lexer(file, i, tokens)
 
 
 taglist = ["<html>", "<Body>", "<section>", "<h2>", "<h3>"]
@@ -165,6 +190,10 @@ tagdict["footer"] = ("while loop", lambda: print(""))
 tagdict["nav"] = ("return statement", lambda: print(""))
 
 
-print("start program")
-root = findFirstTag()
-lexerAndParser(root)
+
+print("--------start program--------")
+
+with open("test.html", "r") as f: 
+    file = f.read()
+
+print(lexer(file))
