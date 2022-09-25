@@ -1,5 +1,4 @@
-from queue import Empty
-from lexer import taglist, closingTagList
+from lexer import token, tag
 import sys
 sys.setrecursionlimit(200000)
 
@@ -19,8 +18,7 @@ class simpleStatement:
 class declerationList(simpleStatement):
     def __init__(self):
         self.functions = []
-        self.variables = []
-
+        
     def __str__(self) -> str:
         return self.functions, self.variables
 
@@ -41,34 +39,34 @@ tokenDict['body'] = ("file start", lambda: declerationList() )
 tokenDict['section'] = ("file start", lambda: function() )
 tokenDict['/html'] = ("file start", lambda: print("eof") )
 
-def parser(tokenList, tree = simpleStatement):
-    if len(tokenList) == 0:
-        print("list empty")
+def parser(tokenTree):
+    if len(tokenTree.children) == 0:
+        print("tokenTree empty")
         return
     
-    if tokenList[0] == "html":
-        tree = tokenDict[tokenList[0]][1]()
-        tokenList = tokenList[1:]
-        parserOptions(tokenList, tree) 
-    
-def parserOptions(tokenList, tree, declerationList = simpleStatement):
-    if len(tokenList) == 0:
-        print("list empty")
-        return
+    AST = simpleStatement("root")
+    parse(tokenTree, AST)
 
-    if tokenList[0] == "body": #declerationList
+def parse(tokenTree, AST : simpleStatement):
+    ASTpiece = parserOptions( tokenTree.children[0] )
+    AST.children.append(ASTpiece)
+
+def parserOptions(newTag : tag) -> simpleStatement:
+    tagName = newTag.name
+
+    if tagName == "body": #declerationList
         declerations = tokenDict[tokenList[0]][1]()
-        tree.children.append(declerations)
+        #tree.children.append(declerations)
         tokenList = tokenList[1:]
-        return parserOptions(tokenList, tree, declerations)
+        #return parserOptions(tokenList, tree, declerations)
 
-    if tokenList[0] == "section": #function
+    if tagName == "section": #function
         function = tokenDict[tokenList[0]][1]()
         declerationList.functions.append(function)
         tokenList = tokenList[1:]
         parseFunction(tokenList, function)
 
-    if tokenList[0] == "article": #if statement
+    if tagName == "article": #if statement
         parseIfStatement()
     
 
