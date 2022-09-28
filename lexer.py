@@ -101,6 +101,10 @@ class tag:
         for child in self.children:
             child.printTree(level+1)
 
+#lex maar functional
+def funcLex():
+    pass
+
 #tuple(index na de tag, de tag, True=open of False=close)
 def findTag(file:str, index:int)->tuple:
     endOfTag = file.find('>', index)

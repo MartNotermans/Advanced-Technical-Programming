@@ -37,7 +37,6 @@ tokenDict = dict()
 tokenDict['html'] = ("file start", lambda: simpleStatement("html") )
 tokenDict['body'] = ("file start", lambda: declerationList() )
 tokenDict['section'] = ("file start", lambda: function() )
-tokenDict['/html'] = ("file start", lambda: print("eof") )
 
 def parser(tokenTree):
     if len(tokenTree.children) == 0:
@@ -47,18 +46,17 @@ def parser(tokenTree):
     AST = simpleStatement("root")
     parse(tokenTree, AST)
 
-def parse(tokenTree, AST : simpleStatement):
-    ASTpiece = parserOptions( tokenTree.children[0] )
+def parse(tokenTree : token, AST : simpleStatement, index = 0):
+    ASTpiece = parserOptions( tokenTree.children[index] )
+    parse(tokenTree, ASTpiece, index+1)
     AST.children.append(ASTpiece)
 
 def parserOptions(newTag : tag) -> simpleStatement:
     tagName = newTag.name
 
     if tagName == "body": #declerationList
-        declerations = tokenDict[tokenList[0]][1]()
-        #tree.children.append(declerations)
-        tokenList = tokenList[1:]
-        #return parserOptions(tokenList, tree, declerations)
+        declerations = tokenDict[tagName]()
+        return declerations
 
     if tagName == "section": #function
         function = tokenDict[tokenList[0]][1]()
