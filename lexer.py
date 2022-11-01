@@ -1,11 +1,15 @@
+from operator import truediv
 from typing import Tuple
 import sys
 sys.setrecursionlimit(200000)
 
 whiteSpace = ' \n\r\t'
 taglist = ["html", "body", "section", "h2", "h3", "mark", "figure", "article", "i", "nav", "h4", "summary", "main", "ins", "output"]
-operatorList = ["+", "-", "*", "/", "%", "**", "//", "=", "+=", "-=", "*=", "/=", "%=", "//=", "**=", "&=", "|=", "^=", ">>=", "<<=", "==", "!=", "<", ">", ">=", "<=", "&", "|", "^", "~", "<<", "<<"]
+#operatorList = ["+", "-", "*", "/", "%", "**", "//", "=", "+=", "-=", "*=", "/=", "%=", "//=", "**=", "&=", "|=", "^=", ">>=", "<<=", "==", "!=", "<", ">", ">=", "<=", "&", "|", "^", "~", "<<", "<<"]
 #niet toegevoegt: and, or, not, is, is not, in, not in
+
+#selectie van de operators, alleen die we gebruiken
+operatorList = "+", "-", "*", "/", "=", "+=", "-=", "*=", "/=", "==", "!=", "<", ">", "<=", ">="
 
 class token:
     def __init__(self, name : str):
@@ -14,9 +18,15 @@ class token:
     def __str__(self) -> str:
         return self.name
 
+    def __repr__(self) -> str:
+        return self.name
+
+    def __eq__(self, other):
+        return self.name == other.name
+
 class identifier(token):
     def __init__(self, name : str):
-        self.name = name\
+        self.name = name
 
 class number(token):
     def __init__(self, name : str):
@@ -38,6 +48,11 @@ class tag:
 
     def __repr__(self) -> str:
         return self.name
+
+    def __eq__(self, other) -> bool:
+        return self.name == other.name and \
+               self.codeBlock == other.codeBlock and \
+               self.children == other.children
 
     def printTree(self, level = 0):
         print (' |  ' * level, self.name)
@@ -124,14 +139,15 @@ def findComment(file:str) -> int:
 
 #higher order function | hogere order functie
 #returnt eerste index dat de proposition False is
-def findEnd(file:str, proposition, index=1)->int:
+def findEnd(file:str, proposition, index=0)->int:
     if index >= len(file):
-        print("geen end")
+        print("no end")
         return index
     if proposition(file[index]):
         return findEnd(file, proposition, index+1)
     return index
 
+#return (de token als string, lengte token)
 def findToken(file:str)->Tuple[token, int]:
     chr, restFile = splitString(file)
     #eerste teken van een identefier moet uit een letter bestaan
