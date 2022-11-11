@@ -1,5 +1,4 @@
-from curses import newwin
-from lexer import tag, token, operatorList
+from lexer import tag, token, identifierToken, numberToken, operatorToken, parenthesesToken, operatorList
 from simpleStatement import *
 
 
@@ -25,6 +24,7 @@ def parser(tokenTree: tag):
     
     #todo: main functie ook parsen
     mainIndex = indexNoError(childrenStringList, "main")
+    AST.mainFunction = parseFuncBody(htmlTag.children[mainIndex])
 
     return AST
 
@@ -53,30 +53,155 @@ def indexAllNoError(lst:list, item:str):
     return indexAllNoErrorIntern(lst, item, indexLst, start)
 
 
-#2+3 wordt plusoperator, left:2, right:3
-#2+(1+3) wordt plusoperator, left:2,right:plusoperator, left:1, right:3
-def parseCodeBlock(codeblock:List[token])->simpleStatement:
-    codeblockStringList = list(map(lambda x: x.name, codeblock) )
-    operatorIndexList = list(filter(lambda x: x == -1, map(lambda x: operatorList.find(x), codeblockStringList)))    #mag ik hier operatorlist gebruiken??? komt van een ander bestand
-    # /\ list met operator indexen
+precedenceDict = dict()
+precedenceDict['*'] = 1
+precedenceDict['/'] = 1
+precedenceDict['+'] = 2
+precedenceDict['-'] = 2
+precedenceDict['=='] = 3
+precedenceDict['!='] = 3
+precedenceDict['<'] = 3
+precedenceDict['>'] = 3
+precedenceDict['<='] = 3
+precedenceDict['>='] = 3
+#operator volgorde: () */ +- == != < > <= >=
+#1 is firstToken, 2 is secondToken, 3 is zelfde precedence
+def checkPrecedence(firstToken:token, secondToken:token)->int:
+    if isinstance(secondToken, parenthesesToken):
+        return 1
+    if precedenceDict[firstToken.name] == precedenceDict[secondToken.name]:
+        return 3
+    if precedenceDict[firstToken.name] < precedenceDict[secondToken.name]:
+        return 1
+    else:
+        return 2
+        #testen!!!
+
+#shunting yard algorithm
+#operatorStack, toevoegen is append, weghalen is pop
+#outputQueue, toevoegen is append, weghalen is pop(0)
+def shuntingYardToRPN(codeblock:List[token], operatorStack:List[token], outputQueue:List[token])->List[token]:
+    if len(codeblock) == 0 and len(operatorStack) == 0:
+        return outputQueue
+    
+    if len(codeblock) == 0:
+        #haakjes niet naar de output queue
+        if operatorStack[-1].name != '(' or operatorStack[-1].name != ')':
+            outputQueue.append( operatorStack.pop() )
+        return shuntingYardToRPN(codeblock, operatorStack, outputQueue)
+
+    tkn, *rest = codeblock
+    if isinstance(tkn, numberToken) or isinstance(tkn, identifierToken):
+        outputQueue.append(tkn)
+        return shuntingYardToRPN(rest, operatorStack, outputQueue)
+    if isinstance(tkn, operatorToken):
+        if len(operatorStack) == 0:
+            operatorStack.append(tkn)
+            return shuntingYardToRPN(rest, operatorStack, outputQueue)
+        else: #een andere operator
+            check = checkPrecedence(tkn, operatorStack[-1])
+            if check == 1:
+                operatorStack.append(tkn)
+                return shuntingYardToRPN(rest, operatorStack, outputQueue)
+            else:
+                #if operatorStack[-1].name != '(' or operatorStack[-1].name != ')':
+                outputQueue.append( operatorStack.pop() )
+                #codeblok en niet rest, omdat je doorgaat totdat rst een hogere precenence heeft
+                return shuntingYardToRPN(codeblock, operatorStack, outputQueue)
+    if isinstance(tkn, parenthesesToken):    
+        if tkn.name == '(':
+            operatorStack.append(tkn)
+            return shuntingYardToRPN(rest, operatorStack, outputQueue)
+        if tkn.name == ')':
+            if len(operatorStack) == 0:
+                print("error, mismatched parenthesis")
+                return
+            if operatorStack[-1].name == '(':
+                operatorStack.pop()
+                return shuntingYardToRPN(rest, operatorStack, outputQueue)
+            else:
+                #haakjes niet naar de output queue
+                # if isinstance(operatorStack[-1], parenthesesToken):
+                #     operatorStack.pop()
+                outputQueue.append( operatorStack.pop() )
+                #codeblok en niet rest, omdat je doorgaat totdat je de opening bracket gevonden hebt
+                return shuntingYardToRPN(codeblock, operatorStack, outputQueue)
+
+def operatorTocodeBlockStatement(token)->codeBlockStatement:
+    operator = token.name
+    if operator == '+':
+        return plusOperator()
+    if operator == '-':
+        return minusOperator()
+    if operator == '*':
+        return multiplicationOperator()
+    if operator == '/':
+        return divisionOperator()
+    if operator == '==':
+        return compareEqual()
+    if operator == '!=':
+        return compareNotEqual()
+    if operator == '<':
+        return compareSmallerThan()
+    if operator == '>':
+        return compareBiggerThan()
+    if operator == '<=':
+        return compareSmallerOrEqual()
+    if operator == '>=':
+        return compareBiggerOrEqual()
+    else:
+        #not an operator
+        return
+
+def RPNtoTree(codeBlockRPN:List[token], tree:operator)->operator:
+    if len(codeBlockRPN) == 0:
+        return tree
+    
+    tkn = codeBlockRPN.pop()
+
+    if isinstance(tkn, operatorToken):
+        newOperator = operatorTocodeBlockStatement(tkn)
+        if tree.rightSide == None:
+            tree.rightSide = RPNtoTree(codeBlockRPN, newOperator)
+        else:
+            tree.leftSide = RPNtoTree(codeBlockRPN, newOperator)
+    elif isinstance(tkn, numberToken):
+        if tree.rightSide == None:
+            tree.rightSide = codeBlockCanstant(int(tkn.name))
+            return RPNtoTree(codeBlockRPN, tree)
+        else:
+            tree.leftSide = codeBlockCanstant(int(tkn.name))
+            return RPNtoTree(codeBlockRPN, tree)
+    #identifier
+    else:
+        if tree.rightSide == None:
+            tree.rightSide = codeBlockVariable(tkn.name)
+            return RPNtoTree(codeBlockRPN, tree)
+        else:
+            tree.leftSide = codeBlockVariable(tkn.name)
+            return RPNtoTree(codeBlockRPN, tree)
+
+def parseCodeBlock(codeblock:List[token])->codeBlockStatement:
+    codeBlockRPN = shuntingYardToRPN(codeblock, [], [])
+    
+    if isinstance(codeBlockRPN[-1], operatorToken):
+        newTree = operatorTocodeBlockStatement(codeBlockRPN.pop() )
+        return RPNtoTree(codeBlockRPN, newTree)
+    elif isinstance(codeBlockRPN[-1], numberToken):
+        return codeBlockCanstant(int(codeBlockRPN[-1].name))
+    else:
+        return codeBlockVariable(codeBlockRPN[-1].name)
+
+    
+    
 
 
 def parseParameter(parameter:tag)->simpleStatement:
     if parameter.name == "mark":
-        #higher order function | hogere order functie
-        childrenStringList = list(map(lambda x: x.name, parameter.children) )
-        nameIndex = indexNoError(childrenStringList, "h2")
-        typeIndex = indexNoError(childrenStringList, "h3")
-
-        #de returntype zoals in de html file
-        returnTypeStr = parameter.children[typeIndex].codeBlock[0].name
-        if returnTypeStr == "int":
-            return intType(parameter.children[nameIndex].codeBlock[0].name)
-        if returnTypeStr == "bool":
-            return boolType(parameter.children[nameIndex].codeBlock[0].name)
-        if returnTypeStr == "str" or returnTypeStr == "string":
-            return strType(parameter.children[nameIndex].codeBlock[0].name)
-
+        if isinstance(parameter.codeBlock[0], token):
+            return initVariable(parameter.codeBlock[0].name)
+        print("error, parameter name is not an identifier")
+        
 def parseIfStatement(ifCode:tag)->simpleStatement:
     newIfStatement = ifStatement()
 
@@ -89,31 +214,30 @@ def parseIfStatement(ifCode:tag)->simpleStatement:
     #ifElseBody[0] = if body, ifElseBody[1] = else body
     ifElseBody = indexAllNoError(ifCodeChildrenStringList, "figure")
     newIfStatement.ifBody = parseFuncBody(ifCode.children[ifElseBody[0]])
-    newIfStatement.elseBody = parseFuncBody(ifCode.children[ifElseBody[1]])
+    if len(ifElseBody) == 2:
+        newIfStatement.elseBody = parseFuncBody(ifCode.children[ifElseBody[1]])
 
     return newIfStatement
 
 def initialiseVariable(variableTag:tag)->simpleStatement:
     tagyChildrenStringList = list(map(lambda x: x.name, variableTag.children) )
     nameIndex = indexNoError(tagyChildrenStringList, "h2")
-    typeIndex = indexNoError(tagyChildrenStringList, "h3")
     valueIndex = indexNoError(tagyChildrenStringList, "h4")
 
-    returnTypeStr = variableTag.children[typeIndex].codeBlock
-    if returnTypeStr == "int":
-        newVariable = intType()
-    if returnTypeStr == "bool":
-        newVariable = boolType()
-    if returnTypeStr == "str" or returnTypeStr == "string":
-        newVariable = strType()
+    newVariable = initVariable()
+    newVariable.name = variableTag.children[nameIndex].codeBlock[0].name
 
-    #moet codeblock parsen
-    newVariable.name = variableTag.children[nameIndex].codeBlock
-    if variableTag.children[valueIndex].codeBlock != -1:
-        newVariable.value = variableTag.children[valueIndex].codeBlock
+    newVariable.value = parseCodeBlock(variableTag.children[valueIndex].codeBlock )
     return newVariable
 
-
+def parseWhile(whileTag:tag)->whileLoop:
+    whileChildrenStringList = list(map(lambda x: x.name, whileTag.children) )
+    conditionIndex = indexNoError(whileChildrenStringList, "i")
+    bodyIndex = indexNoError(whileChildrenStringList, "figure")
+    newWhile = whileLoop()
+    newWhile.condition = parseCodeBlock(whileTag.children[conditionIndex].codeBlock)
+    newWhile.loop = parseFuncBody(whileTag.children[bodyIndex])
+    return newWhile
 
 def parseTagInFuncBody(tagy:tag)->simpleStatement:
     if tagy.name == "nav": #return
@@ -124,14 +248,11 @@ def parseTagInFuncBody(tagy:tag)->simpleStatement:
         return initialiseVariable(tagy)
     elif tagy.name == "summary": #functie aanroepen
         pass
+    elif tagy.name == "output": #print
+        pass
     elif tagy.name == "footer": #while
-        whileChildrenStringList = list(map(lambda x: x.name, tagy.children) )
-        conditionIndex = indexNoError(whileChildrenStringList, "i")
-        bodyIndex = indexNoError(whileChildrenStringList, "figure")
-        newWhile = whileLoop()
-        newWhile.condition = parseCodeBlock(tagy.children[conditionIndex].codeBlock)
-        newWhile.loop = parseFuncBody(tagy.children[bodyIndex])
-        return newWhile
+        return parseWhile(tagy)
+        
 
 #parse the body of a function, if statement or while loop
 def parseFuncBody(funcBody:tag)->List[simpleStatement]:
@@ -148,16 +269,7 @@ def parseFunction(functionTag:tag)->function:
     nameIndex = indexNoError(tagChildrenStringList, "h2")
     newFunction.name = functionTag.children[nameIndex].codeBlock[0].name
 
-    returnIndex = indexNoError(tagChildrenStringList, "h3")
-    #de returntype zoals in de html file
-    returnTypeStr = functionTag.children[returnIndex].codeBlock[0].name
-    if returnTypeStr == "int":
-        newFunction.returnType = intType()
-    if returnTypeStr == "bool":
-        newFunction.returnType = boolType()
-    if returnTypeStr == "str" or returnTypeStr == "string":
-        newFunction.returnType = strType()
-
+    #volgorde parameters blijft behouden
     newFunction.parameters = list(filter(None, map(parseParameter, functionTag.children) ))
 
 

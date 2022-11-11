@@ -11,3 +11,5 @@ tokenTree = lexer(file)
 
 
 AST = parser(tokenTree)
+#AST.__str__
+# print(str(AST) )

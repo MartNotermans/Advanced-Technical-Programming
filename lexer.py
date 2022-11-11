@@ -1,5 +1,4 @@
-from operator import truediv
-from typing import Tuple
+from typing import Tuple, List
 import sys
 sys.setrecursionlimit(200000)
 
@@ -9,7 +8,8 @@ taglist = ["html", "body", "section", "h2", "h3", "mark", "figure", "article", "
 #niet toegevoegt: and, or, not, is, is not, in, not in
 
 #selectie van de operators, alleen die we gebruiken
-operatorList = "+", "-", "*", "/", "=", "+=", "-=", "*=", "/=", "==", "!=", "<", ">", "<=", ">="
+# ( en ) zijn geen operators, maar parenthesesToken
+operatorList = "+", "-", "*", "/", "==", "!=", "<", ">", "<=", ">="
 
 class token:
     def __init__(self, name : str):
@@ -24,23 +24,27 @@ class token:
     def __eq__(self, other):
         return self.name == other.name
 
-class identifier(token):
+class identifierToken(token):
     def __init__(self, name : str):
         self.name = name
 
-class number(token):
+class numberToken(token):
     def __init__(self, name : str):
         self.name = name
 
-class operator(token):
+class operatorToken(token):
+    def __init__(self, name : str):
+        self.name = name
+
+class parenthesesToken(token):
     def __init__(self, name : str):
         self.name = name
 
 class tag:
     def __init__(self, name : str):
         self.name = name #the tag as in the html file
-        self.codeBlock = [] #code block in tag
-        self.children = [] #all other tags containd in this tag
+        self.codeBlock:List[token] = [] #code block in tag
+        self.children:List[tag] = [] #all other tags containd in this tag
 
     #moet bij alle tags
     def __str__(self) -> str:
@@ -57,11 +61,12 @@ class tag:
     def printTree(self, level = 0):
         print (' |  ' * level, self.name)
         if len(self.codeBlock) != 0:
-            for code in self.codeBlock:
-                print(' |  ' * (level+1),'[', code.name, ']')
-        #for mag niet!!
-        for child in self.children:
-            child.printTree(level+1)
+            #for code in self.codeBlock:
+            #    print(' |  ' * (level+1),'[', code.name, ']')
+            list(map(lambda code: print(' |  ' * (level+1),'[', code.name, ']'), self.codeBlock))
+        #for child in self.children:
+        #    child.printTree(level+1)
+        list(map(lambda child: child.printTree(level+1) ) )
 
 def splitString(file):
     return file[0], file[1:]
@@ -90,7 +95,7 @@ def funcLex(file:str, tree)-> Tuple[str, tag]:
                 if tagName == tree.name:
                     return file[tagIndex:], tree
                 else:
-                    print("wrong closing tag found")
+                    print("error, wrong closing tag found")
                     return file[tagIndex:], tree #error
             else:
                 #lex de child
@@ -110,7 +115,7 @@ def funcLex(file:str, tree)-> Tuple[str, tag]:
 def findTag(file:str)->Tuple[int, str, bool]:
     endOfTag = file.find('>')
     if endOfTag == -1:
-        print("geen tag")
+        #print("geen tag")
         return None, None, None #geen tag
     
     # 1 om '<' niet mee te nemen
@@ -121,7 +126,7 @@ def findTag(file:str)->Tuple[int, str, bool]:
         #return index na de tag, de tag, is close tag
         return endOfTag+1, file[2:endOfTag], False
     else:
-        print("invalid tag")
+        #print("invalid tag")
         return None, None, None #geen tag
 
 def findComment(file:str) -> int:
@@ -132,7 +137,7 @@ def findComment(file:str) -> int:
     #index+4 omdat <!-- 4 chars is, en je daarna begind met zoeken
     endOfComment = file.find("-->", 4)
     if endOfComment == -1:
-        print("halve comment?")
+        print("error, halve comment?")
         return None #halve comment?
     #endOfComment+3 omdat je de eerste char na de comment returnt
     return endOfComment+3
@@ -141,13 +146,13 @@ def findComment(file:str) -> int:
 #returnt eerste index dat de proposition False is
 def findEnd(file:str, proposition, index=0)->int:
     if index >= len(file):
-        print("no end")
+        #print("no end")
         return index
     if proposition(file[index]):
         return findEnd(file, proposition, index+1)
     return index
 
-#return (de token als string, lengte token)
+#return tuple(de token, lengte token)
 def findToken(file:str)->Tuple[token, int]:
     chr, restFile = splitString(file)
     #eerste teken van een identefier moet uit een letter bestaan
@@ -156,25 +161,28 @@ def findToken(file:str)->Tuple[token, int]:
         endOfWord = findEnd(file, 
             lambda c: c.isalpha() or c.isdecimal() or c == '_')
 
-        newToken = identifier(file[:endOfWord])
+        newToken = identifierToken(file[:endOfWord])
         return newToken, endOfWord
     if chr.isdecimal():
         endOfNumber = findEnd(file,
             lambda c: c.isdecimal())
 
-        newToken = number(file[:endOfNumber])
+        newToken = numberToken(file[:endOfNumber])
         return newToken, endOfNumber
 
+    if chr == '(' or chr == ')':
+        return parenthesesToken(chr), 1
 
     if len(file) >= 2:
         #operator van 2 characters
         if file[:2] in operatorList:
-            newToken = operator(file[:2])
+            newToken = operatorToken(file[:2])
             return newToken, 2
         #operator van 1 character
         if chr in operatorList:
-            newToken = operator(chr)
+            newToken = operatorToken(chr)
             return newToken, 1
+    #error
     return None, None
 
 
