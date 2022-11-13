@@ -1,4 +1,10 @@
 from typing import List
+from typing import Dict
+
+class programState():
+    def __init__(self):
+        #self.variables:List[stateVariable] = []
+        self.variables:Dict[str, int] = {}
 
 class simpleStatement:
     def __init__(self):
@@ -25,7 +31,7 @@ class codeBlockStatement:
 #in de runner bijhouden wat de waarde voor elk variable op een gegeven moment is
 #return n + 3
 class codeBlockVariable(codeBlockStatement):
-    def __init__(self, name):
+    def __init__(self, name:str):
         self.name:str = name
 
     def __str__(self) -> str:
@@ -36,8 +42,8 @@ class codeBlockVariable(codeBlockStatement):
             return False
         return self.name == other.name
 
-    def compute(self):
-        pass
+    def compute(self, state:programState):
+        return state.variables[self.name]
         #loopup wat waarde variable is
         #lijst met variablen moet recursief worden meegegeven
 
@@ -54,7 +60,7 @@ class codeBlockCanstant(codeBlockStatement):
             return False
         return self.value == other.value
 
-    def compute(self):
+    def compute(self, state:programState):
         return self.value
 
 #variable gebruikt als een nieuw variable gedefined wordt
@@ -62,7 +68,7 @@ class codeBlockCanstant(codeBlockStatement):
 class initVariable(simpleStatement):
     def __init__(self, name = None):
         self.name:str = name
-        self.value:int = None
+        self.value:codeBlockStatement = None
 
     def __str__(self) -> int:
         return self.value
@@ -73,9 +79,6 @@ class initVariable(simpleStatement):
 
     def set(self, value:int):
         self.value = value
-
-    def get(self):
-        return self.value
 
 def boolToInt(bl:bool)->int:
     if bl == True:
@@ -107,80 +110,80 @@ class plusOperator(operator):
     def returnOperator(self)-> str:
         return '+'
     
-    def compute(self)->int:
-        return self.leftSide.get() + self.rightSide.get()
+    def compute(self, state:programState)->int:
+        return self.leftSide.compute(state) + self.rightSide.compute(state)
 
 #-
 class minusOperator(operator):
     def returnOperator(self)-> str:
         return '-'
     
-    def compute(self)->int:
-        return self.leftSide.get() - self.rightSide.get()
+    def compute(self, state:programState)->int:
+        return self.leftSide.compute(state) - self.rightSide.compute(state)
 
 #*
 class multiplicationOperator(operator):
     def returnOperator(self)-> str:
         return '*'
     
-    def compute(self)->int:
-        return self.leftSide.get() * self.rightSide.get()
+    def compute(self, state:programState)->int:
+        return self.leftSide.compute(state) * self.rightSide.compute(state)
 
 #/
 class divisionOperator(operator):
     def returnOperator(self)-> str:
         return '/'
     
-    def compute(self)->int:
-        return self.leftSide.get() / self.rightSide.get()
+    def compute(self, state:programState)->int:
+        return self.leftSide.compute(state) / self.rightSide.compute(state)
 
 #==
 class compareEqual(operator):
     def returnOperator(self)-> str:
         return '=='
     
-    def compute(self)->int:
-        return boolToInt(self.leftSide.get() == self.rightSide.get() )
+    def compute(self, state:programState)->int:
+        return boolToInt(self.leftSide.compute(state) == self.rightSide.compute(state) )
 
 #!=
 class compareNotEqual(operator):
     def returnOperator(self)-> str:
         return '!='
     
-    def compute(self)->int:
-        return boolToInt(self.leftSide.get() != self.rightSide.get() )
+    def compute(self, state:programState)->int:
+        return boolToInt(self.leftSide.compute(state) != self.rightSide.compute(state) )
 
 #<
 class compareSmallerThan(operator):
     def returnOperator(self)-> str:
         return '<'
     
-    def compute(self)->int:
-        return boolToInt(self.leftSide.get() < self.rightSide.get() )
+    def compute(self, state:programState)->int:
+        return boolToInt(self.leftSide.compute(state) < self.rightSide.compute(state) )
 
 #>
 class compareBiggerThan(operator):
     def returnOperator(self)-> str:
         return '>'
     
-    def compute(self)->int:
-        return boolToInt(self.leftSide.get() > self.rightSide.get() )
+    def compute(self, state:programState)->int:
+        return boolToInt(self.leftSide.compute(state) > self.rightSide.compute(state) )
 
 #<=
 class compareSmallerOrEqual(operator):
     def returnOperator(self)-> str:
         return '<='
     
-    def compute(self)->int:
-        return boolToInt(self.leftSide.get() <= self.rightSide.get() )
+    def compute(self, state:programState)->int:
+        return boolToInt(self.leftSide.compute(state) <= self.rightSide.compute(state) )
 
 #>=
 class compareBiggerOrEqual(operator):
     def returnOperator(self)-> str:
         return '>='
     
-    def compute(self)->int:
-        return boolToInt(self.leftSide.get() <= self.rightSide.get() )
+    def compute(self, state:programState)->int:
+        return boolToInt(self.leftSide.compute(state) <= self.rightSide.compute(state) )
 
 
 
@@ -228,8 +231,8 @@ class ifStatement(simpleStatement):
 
 class whileLoop(simpleStatement):
     def __init__(self):
-        self.condition = []
-        self.loop = []
+        self.condition:codeBlockStatement
+        self.loop:List[simpleStatement] = []
 
     def __str__(self) -> str:
         return self.condition
@@ -237,3 +240,38 @@ class whileLoop(simpleStatement):
     def __eq__(self, other) -> bool:
         return self.condition == other.condition and \
                self.loop == other.loop
+
+class returnStatement(simpleStatement):
+    def __init__(self, value):
+        self.value:codeBlockStatement = value
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def compute(self, state:programState):
+        return self.value.compute(state)
+
+class printStatement(simpleStatement):
+    def __init__(self, value):
+        self.value:codeBlockStatement = value
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def compute(self, state:programState):
+        return self.value.compute(state)
+
+class inputStatement(simpleStatement):
+    def __init__(self, variable):
+        #variable moet al bestaan
+        self.variable:codeBlockVariable = variable
+        self.input:operator
+
+    def __str__(self) -> str:
+        return str(self.input)
+
+class functionCallStatement(simpleStatement):
+    def __init__(self):
+        self.functionName:str
+        self.parameters:List[codeBlockStatement]
+        self.returnVariable:str

@@ -200,6 +200,12 @@ class testParser(unittest.TestCase):
 
     def testInitialiseVariable(self):
         self.assertEqual(True, True)
+
+    def testparseWhile(self):
+        self.assertEqual(True, True)
+
+    def testparseFunctionCall(self):
+        self.assertEqual(True, True)
     
     def testParseTagInFuncBody(self):
         self.assertEqual(True, True)

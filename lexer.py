@@ -3,7 +3,7 @@ import sys
 sys.setrecursionlimit(200000)
 
 whiteSpace = ' \n\r\t'
-taglist = ["html", "body", "section", "h2", "h3", "mark", "figure", "article", "i", "nav", "h4", "summary", "main", "ins", "output"]
+taglist = ["html", "body", "section", "h2", "h3", "mark", "figure", "article", "i", "nav", "h4", "summary", "main", "ins", "output", "footer", "input"]
 #operatorList = ["+", "-", "*", "/", "%", "**", "//", "=", "+=", "-=", "*=", "/=", "%=", "//=", "**=", "&=", "|=", "^=", ">>=", "<<=", "==", "!=", "<", ">", ">=", "<=", "&", "|", "^", "~", "<<", "<<"]
 #niet toegevoegt: and, or, not, is, is not, in, not in
 

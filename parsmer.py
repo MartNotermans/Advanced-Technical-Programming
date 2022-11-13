@@ -1,4 +1,4 @@
-from lexer import tag, token, identifierToken, numberToken, operatorToken, parenthesesToken, operatorList
+from lexer import tag, token, identifierToken, numberToken, operatorToken, parenthesesToken
 from simpleStatement import *
 
 
@@ -18,18 +18,17 @@ def parser(tokenTree: tag):
         return None
 
     childrenStringList = list(map(lambda x: x.name, htmlTag.children) )
-    bodyIndex = indexNoError(childrenStringList, "body")
+    bodyIndex = indexNoError(childrenStringList, "body", 0)
     #higher order function | hogere order functie
     AST.functions = list(map(parseFunction, htmlTag.children[bodyIndex].children))
     
-    #todo: main functie ook parsen
-    mainIndex = indexNoError(childrenStringList, "main")
+    mainIndex = indexNoError(childrenStringList, "main", 0)
     AST.mainFunction = parseFuncBody(htmlTag.children[mainIndex])
 
     return AST
 
 #geeft de index van een item in een list, geeft -1 als item niet in list
-def indexNoError(lst:list, item:str, start:int = 0)->int:
+def indexNoError(lst:list, item:str, start:int)->int:
     try:
         index = lst.index(item, start)
         return index
@@ -196,7 +195,7 @@ def parseCodeBlock(codeblock:List[token])->codeBlockStatement:
     
 
 
-def parseParameter(parameter:tag)->simpleStatement:
+def parseParameter(parameter:tag)->initVariable:
     if parameter.name == "mark":
         if isinstance(parameter.codeBlock[0], token):
             return initVariable(parameter.codeBlock[0].name)
@@ -207,7 +206,7 @@ def parseIfStatement(ifCode:tag)->simpleStatement:
 
     ifCodeChildrenStringList = list(map(lambda x: x.name, ifCode.children) )
     #i is condidion
-    conditionIndex = indexNoError(ifCodeChildrenStringList, "i")
+    conditionIndex = indexNoError(ifCodeChildrenStringList, "i", 0)
     #condition: list van tokens, waar onder een operator
     newIfStatement.condition = parseCodeBlock(ifCode.children[conditionIndex].codeBlock)
 
@@ -221,8 +220,8 @@ def parseIfStatement(ifCode:tag)->simpleStatement:
 
 def initialiseVariable(variableTag:tag)->simpleStatement:
     tagyChildrenStringList = list(map(lambda x: x.name, variableTag.children) )
-    nameIndex = indexNoError(tagyChildrenStringList, "h2")
-    valueIndex = indexNoError(tagyChildrenStringList, "h4")
+    nameIndex = indexNoError(tagyChildrenStringList, "h2", 0)
+    valueIndex = indexNoError(tagyChildrenStringList, "h4", 0)
 
     newVariable = initVariable()
     newVariable.name = variableTag.children[nameIndex].codeBlock[0].name
@@ -231,27 +230,43 @@ def initialiseVariable(variableTag:tag)->simpleStatement:
     return newVariable
 
 def parseWhile(whileTag:tag)->whileLoop:
-    whileChildrenStringList = list(map(lambda x: x.name, whileTag.children) )
-    conditionIndex = indexNoError(whileChildrenStringList, "i")
-    bodyIndex = indexNoError(whileChildrenStringList, "figure")
+    whileChildrenStringList = list(map(lambda child: child.name, whileTag.children) )
+    conditionIndex = indexNoError(whileChildrenStringList, "i", 0)
+    bodyIndex = indexNoError(whileChildrenStringList, "figure", 0)
     newWhile = whileLoop()
     newWhile.condition = parseCodeBlock(whileTag.children[conditionIndex].codeBlock)
     newWhile.loop = parseFuncBody(whileTag.children[bodyIndex])
     return newWhile
 
+def parseFunctionCall(callTag:tag)->functionCallStatement:
+    callTagChildrenStringList = list(map(lambda x: x.name, callTag.children) )
+    nameIndex = indexNoError(callTagChildrenStringList, "h2", 0)
+    returnVariableIndex = indexNoError(callTagChildrenStringList, "h3", 0)
+    functieParametersIndex = indexAllNoError(callTagChildrenStringList, "h4")
+    
+    newFunctionCall = functionCallStatement()
+    newFunctionCall.functionName = callTag.children[nameIndex].codeBlock[0].name
+    newFunctionCall.returnVariable = callTag.children[returnVariableIndex].codeBlock[0].name
+    newFunctionCall.parameters = list(map(lambda index: parseCodeBlock(callTag.children[index].codeBlock), functieParametersIndex))
+    return newFunctionCall
+
 def parseTagInFuncBody(tagy:tag)->simpleStatement:
     if tagy.name == "nav": #return
-        pass
+        #testen
+        return returnStatement(parseCodeBlock(tagy.children[0].codeBlock))
     elif tagy.name == "article": #if
         return parseIfStatement(tagy)
     elif tagy.name == "ins": #initialise
         return initialiseVariable(tagy)
     elif tagy.name == "summary": #functie aanroepen
-        pass
+        return parseFunctionCall(tagy)
     elif tagy.name == "output": #print
-        pass
+        #testen
+        return printStatement(parseCodeBlock(tagy.children[0].codeBlock))
     elif tagy.name == "footer": #while
         return parseWhile(tagy)
+    elif tagy.name == "input": #user input
+        return inputStatement(parseCodeBlock(tagy.children[0].codeBlock))
         
 
 #parse the body of a function, if statement or while loop
@@ -266,14 +281,14 @@ def parseFunction(functionTag:tag)->function:
     newFunction = function()
 
     tagChildrenStringList = list(map(lambda x: x.name, functionTag.children) )
-    nameIndex = indexNoError(tagChildrenStringList, "h2")
-    newFunction.name = functionTag.children[nameIndex].codeBlock[0].name
+    nameIndex = indexNoError(tagChildrenStringList, "h2", 0)
+    newFunction.functionName = functionTag.children[nameIndex].codeBlock[0].name
 
     #volgorde parameters blijft behouden
     newFunction.parameters = list(filter(None, map(parseParameter, functionTag.children) ))
 
 
     functionTagChildrenStringList = list(map(lambda x: x.name, functionTag.children) )
-    funcBodyIndex = indexNoError(functionTagChildrenStringList, "figure")
+    funcBodyIndex = indexNoError(functionTagChildrenStringList, "figure", 0)
     newFunction.body = parseFuncBody(functionTag.children[funcBodyIndex])
     return newFunction
