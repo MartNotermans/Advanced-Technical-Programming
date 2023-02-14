@@ -5,9 +5,9 @@ from simpleStatement import *
 from typing import List
 import sys
 sys.setrecursionlimit(200000)
-
-
-def parser(tokenTree: tag):
+#main parser functie, krijgt de <html> tag en maakt een AST
+#parser :: tag -> declerationList
+def parser(tokenTree: tag) -> declerationList:
     if len(tokenTree.children) != 1:
         print("tokenTree empty")
         return
@@ -27,7 +27,8 @@ def parser(tokenTree: tag):
 
     return AST
 
-#geeft de index van een item in een list, geeft -1 als item niet in list
+#geeft de index van een item in een list, geeft -1 als het item niet in list zit
+# indexNoError :: list -> str -> int -> int
 def indexNoError(lst:list, item:str, start:int)->int:
     try:
         index = lst.index(item, start)
@@ -39,6 +40,7 @@ def indexNoError(lst:list, item:str, start:int)->int:
 #geeft alle indexen van een item in een lijst, geeft lege lijst terug als item niet in lijst
 #lst = lijst om in te zoeken, item = wat je wil zoeken, indexlist = return, start = 
 #intern omdat python moeilijk doet met de indexlist die altijd leeg moet zijn aan het begin
+# indexAllNoErrorIntern :: list -> str -> list -> int -> list
 def indexAllNoErrorIntern(lst:list, item:str, indexLst:list, start:int)->list:
     index = indexNoError(lst, item, start)
     if index == -1:
@@ -63,8 +65,10 @@ precedenceDict['<'] = 3
 precedenceDict['>'] = 3
 precedenceDict['<='] = 3
 precedenceDict['>='] = 3
+#deze functie checkt de welke operator een hogere precedence heeft
 #operator volgorde: () */ +- == != < > <= >=
 #1 is firstToken, 2 is secondToken, 3 is zelfde precedence
+# checkPrecedence :: token -> token -> int
 def checkPrecedence(firstToken:token, secondToken:token)->int:
     if isinstance(secondToken, parenthesesToken):
         return 1
@@ -74,11 +78,11 @@ def checkPrecedence(firstToken:token, secondToken:token)->int:
         return 1
     else:
         return 2
-        #testen!!!
 
-#shunting yard algorithm
+#shunting yard algorithm naar Reverse Polish notation (RPN)
 #operatorStack, toevoegen is append, weghalen is pop
 #outputQueue, toevoegen is append, weghalen is pop(0)
+# shuntingYardToRPN :: List[token] -> List[token] -> List[token] -> List[token]
 def shuntingYardToRPN(codeblock:List[token], operatorStack:List[token], outputQueue:List[token])->List[token]:
     if len(codeblock) == 0 and len(operatorStack) == 0:
         return outputQueue
@@ -126,6 +130,8 @@ def shuntingYardToRPN(codeblock:List[token], operatorStack:List[token], outputQu
                 #codeblok en niet rest, omdat je doorgaat totdat je de opening bracket gevonden hebt
                 return shuntingYardToRPN(codeblock, operatorStack, outputQueue)
 
+#functie om van een operator een codeBlockStatement te maken
+# operatorTocodeBlockStatement :: token -> codeBlockStatement
 def operatorTocodeBlockStatement(token)->codeBlockStatement:
     operator = token.name
     if operator == '+':
@@ -152,6 +158,8 @@ def operatorTocodeBlockStatement(token)->codeBlockStatement:
         #not an operator
         return
 
+#Reverse Polish notation to operator tree
+# RPNtoTree :: List[token] -> operator -> operator
 def RPNtoTree(codeBlockRPN:List[token], tree:operator)->operator:
     if len(codeBlockRPN) == 0:
         return tree
@@ -180,6 +188,8 @@ def RPNtoTree(codeBlockRPN:List[token], tree:operator)->operator:
             tree.leftSide = codeBlockVariable(tkn.name)
             return RPNtoTree(codeBlockRPN, tree)
 
+#parse een codeblock token
+# parseCodeBlock :: List[token] -> codeBlockStatement
 def parseCodeBlock(codeblock:List[token])->codeBlockStatement:
     codeBlockRPN = shuntingYardToRPN(codeblock, [], [])
     
@@ -191,16 +201,16 @@ def parseCodeBlock(codeblock:List[token])->codeBlockStatement:
     else:
         return codeBlockVariable(codeBlockRPN[-1].name)
 
-    
-    
-
-
+#parse een parameter tag
+# parseParameter :: tag -> initVariable
 def parseParameter(parameter:tag)->initVariable:
     if parameter.name == "mark":
         if isinstance(parameter.codeBlock[0], token):
             return initVariable(parameter.codeBlock[0].name)
         print("error, parameter name is not an identifier")
-        
+
+#parse een if statement tag
+# parseIfStatement :: tag -> simpleStatement
 def parseIfStatement(ifCode:tag)->simpleStatement:
     newIfStatement = ifStatement()
 
@@ -218,6 +228,8 @@ def parseIfStatement(ifCode:tag)->simpleStatement:
 
     return newIfStatement
 
+#initialize een variable van een tag
+# initialiseVariable :: tag -> simpleStatement
 def initialiseVariable(variableTag:tag)->simpleStatement:
     tagyChildrenStringList = list(map(lambda x: x.name, variableTag.children) )
     nameIndex = indexNoError(tagyChildrenStringList, "h2", 0)
@@ -229,6 +241,8 @@ def initialiseVariable(variableTag:tag)->simpleStatement:
     newVariable.value = parseCodeBlock(variableTag.children[valueIndex].codeBlock )
     return newVariable
 
+#parse een while loop
+# parseWhile :: tag -> whileLoop
 def parseWhile(whileTag:tag)->whileLoop:
     whileChildrenStringList = list(map(lambda child: child.name, whileTag.children) )
     conditionIndex = indexNoError(whileChildrenStringList, "i", 0)
@@ -238,6 +252,8 @@ def parseWhile(whileTag:tag)->whileLoop:
     newWhile.loop = parseFuncBody(whileTag.children[bodyIndex])
     return newWhile
 
+#parse een functie call
+# parseFunctionCall :: tag -> functionCallStatement
 def parseFunctionCall(callTag:tag)->functionCallStatement:
     callTagChildrenStringList = list(map(lambda x: x.name, callTag.children) )
     nameIndex = indexNoError(callTagChildrenStringList, "h2", 0)
@@ -250,6 +266,8 @@ def parseFunctionCall(callTag:tag)->functionCallStatement:
     newFunctionCall.parameters = list(map(lambda index: parseCodeBlock(callTag.children[index].codeBlock), functieParametersIndex))
     return newFunctionCall
 
+#parse een tag in een functie body
+# parseTagInFuncBody :: tag -> simpleStatement
 def parseTagInFuncBody(tagy:tag)->simpleStatement:
     if tagy.name == "nav": #return
         #testen
@@ -270,9 +288,12 @@ def parseTagInFuncBody(tagy:tag)->simpleStatement:
         
 
 #parse the body of a function, if statement or while loop
+# parseFuncBody :: tag -> List[simpleStatement]
 def parseFuncBody(funcBody:tag)->List[simpleStatement]:
     return list(map(parseTagInFuncBody, funcBody.children))
 
+#parse een function
+# parseFunction :: tag -> function
 def parseFunction(functionTag:tag)->function:
     if functionTag.name != "section":
         #geen function

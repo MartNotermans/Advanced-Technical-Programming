@@ -24,7 +24,7 @@ class testLexer(unittest.TestCase):
         # print("---testtree---")
         # testTree.printTree()
 
-        emptyFile, tree = lexer.funcLex(testFile, lexer.tag("root"))
+        emptyFile, tree = lexer.lex(testFile, lexer.tag("root"))
         # print("---tree---")
         # tree.printTree()
 

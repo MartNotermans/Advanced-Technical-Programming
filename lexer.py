@@ -68,11 +68,15 @@ class tag:
         #    child.printTree(level+1)
         list(map(lambda child: child.printTree(level+1) ) )
 
-def splitString(file):
+#splits a string in the first character and the rest of the string
+# splitString :: str -> Tuple[str, str]
+def splitString(file:str) -> Tuple[str, str]:
     return file[0], file[1:]
 
-#lex maar functional
-def funcLex(file:str, tree)-> Tuple[str, tag]:
+#lex a file, returned a tree, also returns a str, this is the remainder of the file to work with recursion
+#maakt een tree met de tags zoals die in de html file staan
+# lex :: str -> tag -> Tuple[str, tag]
+def lex(file:str, tree:tag)-> Tuple[str, tag]:
     if len(file) == 0:
         return file, tree
     
@@ -80,12 +84,12 @@ def funcLex(file:str, tree)-> Tuple[str, tag]:
 
     #ingore whitespaces
     if chr in whiteSpace:
-        return funcLex(restFile, tree)
+        return lex(restFile, tree)
 
     if chr == '<':
         commentIndex = findComment(file)
         if commentIndex != None:
-            return funcLex(file[commentIndex:], tree)
+            return lex(file[commentIndex:], tree)
 
         tagIndex, tagName, isOpen = findTag(file)
         if tagIndex != None:
@@ -99,19 +103,20 @@ def funcLex(file:str, tree)-> Tuple[str, tag]:
                     return file[tagIndex:], tree #error
             else:
                 #lex de child
-                newFile, childTree = funcLex(file[tagIndex:], tag(tagName))
+                newFile, childTree = lex(file[tagIndex:], tag(tagName))
                 tree.children.append(childTree)
                 #door met lexen na child
-                return funcLex(newFile, tree)
+                return lex(newFile, tree)
 
     #wat als geen tag, maar codeblock
     newToken, tokenLenght = findToken(file)
     tree.codeBlock.append(newToken)
     
-    return funcLex(file[tokenLenght:], tree)
+    return lex(file[tokenLenght:], tree)
 
-
+#functie om te checken of iets een tag is, zo ja, returned de index na de tag, de tag en of het een open of closing tag is
 #tuple(index na de tag, de tag, True=open of False=close)
+# findTag :: str -> Tuple[int, str, bool]
 def findTag(file:str)->Tuple[int, str, bool]:
     endOfTag = file.find('>')
     if endOfTag == -1:
@@ -129,6 +134,8 @@ def findTag(file:str)->Tuple[int, str, bool]:
         #print("invalid tag")
         return None, None, None #geen tag
 
+#functie om te checken of iets een comment is, zo ja, returned de lengte van de comment
+# findComment :: str -> int
 def findComment(file:str) -> int:
     if file[:4] != "<!--":
         #print("geen comment")
@@ -152,7 +159,9 @@ def findEnd(file:str, proposition, index=0)->int:
         return findEnd(file, proposition, index+1)
     return index
 
+#functie om te checken of iets een token is, zo ja, returned de token en de lengte van de token
 #return tuple(de token, lengte token)
+# findToken :: str -> Tuple[token, int]
 def findToken(file:str)->Tuple[token, int]:
     chr, restFile = splitString(file)
     #eerste teken van een identefier moet uit een letter bestaan
@@ -186,12 +195,13 @@ def findToken(file:str)->Tuple[token, int]:
     return None, None
 
 
-    
 
-def lexer(file):
+#functie om het progrtamma te starten
+# lexer :: str -> tag
+def lexer(file:str) -> tag:
     # tree = tag("root")
     # tree.lex(file)
 
-    emptyFile, tree = funcLex(file, tag("root"))
+    emptyFile, tree = lex(file, tag("root"))
 
     return tree
