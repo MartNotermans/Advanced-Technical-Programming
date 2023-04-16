@@ -1,10 +1,15 @@
 from simpleStatement import *
 from parsmer import *
 
+#functie om de runner te starten
+#runner :: declerationList
 def runner(AST:declerationList):
     state = programState()
     runFunction(AST, AST.mainFunction,state)
-    
+
+#functie om een html functie te runnen
+#wordt aangeroepen met de main functie
+# runFunction :: declerationList -> List[simpleStatement] -> programState -> programState
 def runFunction(AST:declerationList, function:List[simpleStatement], state:programState)->programState:
     if len(function) == 0:
         return state

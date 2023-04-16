@@ -48,7 +48,7 @@ class codeBlockVariable(codeBlockStatement):
         #lijst met variablen moet recursief worden meegegeven
 
 #getallen in een codeblock
-class codeBlockCanstant(codeBlockStatement):
+class codeBlockConstant(codeBlockStatement):
     def __init__(self, value):
         self.value:int = value
 
@@ -248,6 +248,9 @@ class returnStatement(simpleStatement):
     def __str__(self) -> str:
         return str(self.value)
 
+    def __eq__(self, other) -> bool:
+        return self.value == other.value
+
     def compute(self, state:programState):
         return self.value.compute(state)
 
@@ -257,6 +260,9 @@ class printStatement(simpleStatement):
 
     def __str__(self) -> str:
         return str(self.value)
+
+    def __eq__(self, other) -> bool:
+        return self.value == other.value
 
     def compute(self, state:programState):
         return self.value.compute(state)
@@ -269,9 +275,21 @@ class inputStatement(simpleStatement):
 
     def __str__(self) -> str:
         return str(self.input)
+    
+    def __eq__(self, other) -> bool:
+        return self.variable == other.variable and \
+               self.input == other.input
 
 class functionCallStatement(simpleStatement):
     def __init__(self):
         self.functionName:str
         self.parameters:List[codeBlockStatement]
         self.returnVariable:str
+
+    def __str__(self) -> str:
+        return self.functionName
+    
+    def __eq__(self, other) -> bool:
+        return self.functionName == other.functionName and \
+               self.parameters == other.parameters and \
+               self.returnVariable == other.returnVariable

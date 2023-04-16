@@ -1,0 +1,180 @@
+<html>
+    <body>
+        <!--
+            bool even(int n) {
+                if(n==0){
+                    return true
+                }else{
+                    bool var
+                    var = odd(n-1)
+                    return var;
+                }
+            }
+        -->
+        <section> <!--function declaration-->
+            <h2>even</h2> <!--functie name-->
+            <mark>n</mark><!--functie parameter-->
+            <figure>   <!--functie body-->
+                <article> <!-- if statement-->
+
+                    <i>n == 0</i> <!--if statement condition-->
+                    <figure> <!--if statement body-->
+                        <nav> <!--return-->
+                            <h4>1</h4> <!--true-->
+                        </nav>
+                    </figure>
+                    <figure> <!--2e figure is else statement body-->
+                        <ins> <!--initialise-->
+                            <h2>var</h2><!--name-->
+                            <h4>0</h4>  <!--inisialize als 0, dummy waarde-->
+                        </ins>
+                        <summary> <!--functie aanroepen-->
+                            <h2>odd</h2> <!--functie name-->
+                            <h3>var</h3> <!--place to return to-->
+                            <h4>n - 1</h4> <!--functie parameter-->
+                        </summary>
+                        <nav> <!--return-->
+                            <h4>var</h4>
+                        </nav>
+                    </figure>
+                </article>
+            </figure>
+        </section>
+
+        <!-- 
+            bool odd(int n){
+                if(n==0){return false;}
+                bool var
+                var = even(n-1);
+                return var;
+            }
+         -->
+         <section> <!--function declaration-->
+            <h2>odd</h2> <!--functie name-->
+            <mark>n</mark><!--functie parameter-->
+            <figure>   <!--functie body-->
+                <article> <!-- if statement-->
+                    <i>n == 0</i> <!--if statement condition-->
+                    <figure> <!--if statement body-->
+                        <nav> <!--return-->
+                            <h4>0</h4> <!--false-->
+                        </nav>
+                    </figure>
+                    <figure> <!--2e figure is else statement body-->
+                        <ins>
+                            <h2>var</h2>
+                            <h4>0</h4>  <!--inisialize als 0, dummy waarde-->
+                        </ins>
+                        <summary> <!--functie aanroepen-->
+                            <h2>even</h2> <!--functie name-->
+                            <h3>var</h3> <!--place to return to-->
+                            <h4>n - 1</h4> <!--functie parameter-->
+                        </summary>
+                        <nav> <!--return-->
+                            <h4>var</h4>
+                        </nav>
+                    </figure>
+                </article>
+            </figure>
+        </section>
+
+        <!--
+            int sommig(int n){
+                int result = 0;
+                while(n>=1){
+                    result += n;
+                    n--;
+                }
+                return result;
+            }
+        -->
+        <section>
+            <h2>sommig</h2>
+            <h3>int</h3>
+            <mark>n</mark><!--functie parameter-->
+            <figure>
+                <ins>
+                    <h2>result</h2>
+                    <h4>0</h4>
+                </ins>
+                <footer> <!--while-->
+                    <i>n >= 1</i>
+                    <figure> <!--body-->
+                        <ins>
+                            <h2>result</h2> <!--variable name-->
+                            <h4>result + n</h4> <!--value-->
+                        </ins>
+                        <ins>
+                            <h2>n</h2> <!--variable name-->
+                            <h4>n - 1</h4> <!--value-->
+                        </ins>
+                    </figure>
+                </footer>
+                <nav>
+                    <h4>result</h4> <!--return-->
+                </nav>
+            </figure>
+        </section>
+    </body>
+
+    <main> <!--main function, runs first-->
+
+        <!--
+            int var
+            int inputVar = userInput()
+            var = even(inputVar)
+            print(var)
+
+
+            int n = 3
+            n = 5 * 5
+        -->
+        <ins>   <!--INiSialize-->
+            <h2>var</h2>
+            <h4>0</h4>  <!--inisialize als 0, dummy waarde-->
+        </ins>
+        <ins>   <!--INiSialize-->
+            <h2>inputVar</h2>
+            <h4>0</h4> <!--inisialize als 0, dummy waarde-->
+        </ins>
+        <summary> <!--functie aanroepen-->
+            <h2>even</h2> <!--functie name-->
+            <h3>var</h3> <!--place to return to, variable die al bestaat-->
+            <h4>inputVar</h4> <!--functie parameter-->
+        </summary>
+        <output><!--print-->
+            <h4>var</h4>
+        </output>
+
+        <ins>   <!--INiSialize-->
+            <h2>n</h2>
+            <h4>3</h4>
+        </ins>
+        <ins>   <!--INiSialize-->
+            <h2>n</h2>
+            <h4>n*5</h4>
+        </ins>
+
+
+        <article> <!-- if statement-->
+            <!-- (n == 0) + (n == 1) is hetzelfde als n == 0 | n == 1 -->
+            <i>n > 0</i> <!--if statement condition-->
+            <figure> <!--if statement body-->
+                <ins>   <!--INiSialize-->
+                    <h2>n</h2>
+                    <h4>42</h4>
+                </ins>
+            </figure>
+        </article>
+
+        <summary> <!--functie aanroepen-->
+            <h2>sommig</h2> <!--functie name-->
+            <h3>n</h3> <!--place to return to, variable die al bestaat-->
+            <h4>inputVar</h4> <!--functie parameter-->
+        </summary>
+        <output><!--print-->
+            <h4>n</h4>
+        </output>
+
+    </main>
+</html>

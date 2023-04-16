@@ -174,10 +174,10 @@ def RPNtoTree(codeBlockRPN:List[token], tree:operator)->operator:
             tree.leftSide = RPNtoTree(codeBlockRPN, newOperator)
     elif isinstance(tkn, numberToken):
         if tree.rightSide == None:
-            tree.rightSide = codeBlockCanstant(int(tkn.name))
+            tree.rightSide = codeBlockConstant(int(tkn.name))
             return RPNtoTree(codeBlockRPN, tree)
         else:
-            tree.leftSide = codeBlockCanstant(int(tkn.name))
+            tree.leftSide = codeBlockConstant(int(tkn.name))
             return RPNtoTree(codeBlockRPN, tree)
     #identifier
     else:
@@ -197,7 +197,7 @@ def parseCodeBlock(codeblock:List[token])->codeBlockStatement:
         newTree = operatorTocodeBlockStatement(codeBlockRPN.pop() )
         return RPNtoTree(codeBlockRPN, newTree)
     elif isinstance(codeBlockRPN[-1], numberToken):
-        return codeBlockCanstant(int(codeBlockRPN[-1].name))
+        return codeBlockConstant(int(codeBlockRPN[-1].name))
     else:
         return codeBlockVariable(codeBlockRPN[-1].name)
 
