@@ -1,5 +1,9 @@
 # Advanced-Technical-Programming
 
+dit is de readme voor html++, een turing complete programmeertaal waarbij je codeerd met html tags
+
+hieronder is in een tabel beschreven welke tag waarvoor staat, in de voorbeelden staat in comments wat de code doet
+
 |     functie declaratie    |                                             |     < section >    |                                                                  |
 |---------------------------|---------------------------------------------|--------------------|------------------------------------------------------------------|
 |                           |     functie naam                            |     < h2 >         |     Naam                                                         |
